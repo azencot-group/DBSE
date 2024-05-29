@@ -1,2 +1,2 @@
-# SED
-Sequential Disentanglement by Extracting Static Information From A Single Sequence Element
+# DBSE
+Sequential **D**isentanglement **b**y Extracting Static Information From A **S**ingle Sequence **E**lement
