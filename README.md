@@ -11,12 +11,14 @@ This project presents a novel approach to unsupervised sequential disentanglemen
 ## Setup
 Download and set up the repository:
 ```bash
-git clone https://github.com/azencot-group/DBSE.git (change to anonymous)
+git clone https://github.com/azencot-group/DBSE.git
 ```
 
 ## 📊 Data
-[Timit](https://catalog.ldc.upenn.edu/LDC93S1)
-[All the rest](https://drive.google.com/drive/folders/1bzECwhWXtCrgwOHBzcIlCMVYLr6OGi56?usp=sharing)
+[Sprites](https://paperswithcode.com/dataset/sprites)<br>
+[Time Series](https://drive.google.com/drive/folders/1bzECwhWXtCrgwOHBzcIlCMVYLr6OGi56?usp=sharing)<br>
+[Timit](https://catalog.ldc.upenn.edu/LDC93S1)<br><br>
+<b>Note:</b> The [Mug](https://www.researchgate.net/publication/224187946_The_MUG_facial_expression_database) dataset is private, so we are unable to upload it here.
 
 ## Video
 
