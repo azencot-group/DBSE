@@ -22,4 +22,4 @@ class Sprite(Dataset):
         A_label = self.A_label[index] # (4,)
         D_label = self.D_label[index] # ()
 
-        return {"images": data, "A_label": A_label, "D_label": D_label, "index": index}
+        return {"video": data, "A_label": A_label, "D_label": D_label, "index": index}

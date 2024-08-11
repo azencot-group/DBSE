@@ -36,7 +36,7 @@ def check_cls_sprites(opt, dbse, classifier, test_loader, run):
         pred1_all, pred2_all, label2_all = list(), list(), list()
         label_gt = list()
         for i, data in enumerate(test_loader):
-            x, label_A, label_D = reorder(data['images']), data['A_label'][:, 0], data['D_label'][:, 0]
+            x, label_A, label_D = reorder(data['video']), data['A_label'][:, 0], data['D_label'][:, 0]
             x, label_A, label_D = x.cuda(), label_A.cuda(), label_D.cuda()
 
             if opt.type_gt == "action":
@@ -305,10 +305,10 @@ def merge_images(directory, output_path):
 
     image_files.sort()
 
-    # Load images
+    # Load video
     images = [Image.open(img) for img in image_files]
 
-    # Make sure images got same width
+    # Make sure video got same width
     max_width = max(image.size[0] for image in images)
     images = [image.resize((max_width, int(max_width * image.size[1] / image.size[0])), Image.ANTIALIAS) for image in
               images]

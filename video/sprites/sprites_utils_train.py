@@ -22,7 +22,7 @@ def check_cls(opt, dbse, classifier, test_loader, run):
         pred1_all, pred2_all, label2_all = list(), list(), list()
         label_gt = list()
         for i, data in enumerate(test_loader):
-            x, label_A, label_D = reorder(data['images']), data['A_label'][:, 0], data['D_label'][:, 0]
+            x, label_A, label_D = reorder(data['video']), data['A_label'][:, 0], data['D_label'][:, 0]
             x, label_A, label_D = x.cuda(), label_A.cuda(), label_D.cuda()
 
             if opt.type_gt == "action":

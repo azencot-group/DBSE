@@ -12,7 +12,7 @@ parser.add_argument('--neptune', default=True, type=bool, help='activate neptune
 
 parser.add_argument('--dataset', default='MUG', type=str, help='dataset to train')
 parser.add_argument('--frames', default=15, type=int, help='number of frames, 8 for sprite, 15 for digits and MUGs')
-parser.add_argument('--channels', default=3, type=int, help='number of channels in images')
+parser.add_argument('--channels', default=3, type=int, help='number of channels in video')
 parser.add_argument('--image_width', default=64, type=int, help='the height / width of the input image to network')
 parser.add_argument('--decoder', default='ConvT', type=str, help='Upsampling+Conv or Transpose Conv: Conv or ConvT')
 

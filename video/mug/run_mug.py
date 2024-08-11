@@ -6,8 +6,8 @@ import progressbar
 import torch.optim as optim
 import torch.utils.data
 from dbse_model import DBSE
-from images.mug.utils import *
-from images.mug.mug_utils_train import *
+from video.mug.utils import *
+from video.mug.mug_utils_train import *
 from mug_hyperparameters import *
 from mug_utils import *
 from dbse_loss_mug import DbseLoss

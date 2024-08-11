@@ -15,19 +15,20 @@ git clone https://github.com/azencot-group/DBSE.git (change to anonymous)
 ```
 
 ## 📊 Data
-We will sadd soon all the relevan data sets that we used on our work.
+[Timit](https://catalog.ldc.upenn.edu/LDC93S1)
+[All the rest](https://drive.google.com/drive/folders/1bzECwhWXtCrgwOHBzcIlCMVYLr6OGi56?usp=sharing)
 
 ## Video
 
 For Training and Evaluation of mug dataset (Table 1 in our paper):
 ```bash
-cd /images/mug/
+cd video/mug/
 python run_mug.py
 ```
 
 For Training and Evaluation of sprites dataset (Table 1 in our paper):
 ```bash
-cd /images/sprites/
+cd video/sprites/
 python run_sprites.py
 ```
 
@@ -35,26 +36,32 @@ python run_sprites.py
 
 For Training and Evaluation of etth1 predictor (Table 3 in our paper):
 ```bash
-cd /time_series/etth1_prediction/
+cd time_series/etth1_prediction/
 python train_e2e_etth1_prediction.py
 ```
 
 For Training and Evaluation of physionet predictor (Table 3 in our paper):
 ```bash
-cd /time_series/physionet_prediction/
+cd time_series/physionet_prediction/
 python train_e2e_physionet_prediction.py
 ```
 
 For Training and Evaluation of air quality classifier (Table 4 in our paper):
 ```bash
-cd /time_series/air_quality_classifier/
+cd time_series/air_quality_classifier/
 python train_e2e_air_quality_classifier.py
 ```
 
 For Training and Evaluation of physionet classifier (Table 4 in our paper):
 ```bash
-cd /time_series/physionet_classifier/
+cd time_series/physionet_classifier/
 python train_e2e_physionet_classifier.py
+```
+
+For Training and Evaluation of timit classifier (Table 7 in our paper):
+```bash
+cd audio/
+python train_e2e_timit.py
 ```
 
 ## Bibtex:

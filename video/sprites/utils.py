@@ -1,18 +1,25 @@
+import random
+
 import torch
 import numpy as np
-import os, sys
-import random
-import torch.nn as nn
-import math
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import torchvision
 from matplotlib import pyplot as plt
-from pynvml import *
-import socket
+
+
+# matplotlib.use('agg')
+
 
 # X, X, 64, 64, 3 -> # X, X, 3, 64, 64
 def reorder(sequence):
     return sequence.permute(0, 1, 4, 2, 3)
+
+
+def get_batch(train_loader):
+    while True:
+        for sequence in train_loader:
+            yield sequence
+
 
 def print_log(print_string, log=None, verbose=True):
     if verbose:
@@ -30,6 +37,9 @@ def clear_progressbar():
     print("\033[2K")
     # moves up two lines again
     print("\033[2A")
+
+
+import torch.nn as nn
 
 
 def init_weights(model):
@@ -54,7 +64,7 @@ def entropy_Hy(p_yx, eps=1E-16):
 
 def entropy_Hyx(p, eps=1E-16):
     sum_h = (p * np.log(p + eps)).sum(axis=1)
-    # average over images
+    # average over video
     avg_h = np.mean(sum_h) * (-1)
     return avg_h
 
@@ -66,7 +76,7 @@ def inception_score(p_yx, eps=1E-16):
     kl_d = p_yx * (np.log(p_yx + eps) - np.log(p_y + eps))
     # sum over classes
     sum_kl_d = kl_d.sum(axis=1)
-    # average over images
+    # average over video
     avg_kl_d = np.mean(sum_kl_d)
     # undo the logs
     is_score = np.exp(avg_kl_d)
@@ -77,25 +87,55 @@ def KL_divergence(P, Q, eps=1E-16):
     kl_d = P * (np.log(P + eps) - np.log(Q + eps))
     # sum over classes
     sum_kl_d = kl_d.sum(axis=1)
-    # average over images
+    # average over video
     avg_kl_d = np.mean(sum_kl_d)
     return avg_kl_d
 
 
-# Schedulers are used to adjust the learning rate during training. They modify the learning rate based on the number of epochs, or steps, improving the model's ability to find optimal solutions.
-def define_scheduler(opt, optimizer):
-    schedulers = {
-        "cosine": torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, eta_min=2e-4, T_0=(opt.nEpoch + 1) // 2, T_mult=1),
-        "step": torch.optim.lr_scheduler.StepLR(optimizer, step_size=opt.nEpoch // 2, gamma=0.5),
-        "const": None,
-    }
+def imshow_seq_simple(data, neptune=None, file_name="", plot=False):
+    # npimg = data.numpy()
+    npimg = data
+    np.transpose(torchvision.utils.make_grid(torch.tensor(npimg)), (1, 2, 0))
+    frame1 = plt.gca()
+    plt.imshow(np.transpose(torchvision.utils.make_grid(torch.tensor(npimg)), (1, 2, 0)))
+    frame1.axes.get_xaxis().set_visible(False)
+    frame1.axes.get_yaxis().set_visible(False)
+    # plt.savefig('./results/mug_simclr_examples.pdf', transparent=True, bbox_inches='tight', pad_inches=0,
+    #             dpi=300)
+    if neptune is not None:
+        fig = plt.figure(1, (2, 2))
+        neptune[file_name].log(fig)
+    elif plot:
+        plt.show()
+    else:
+        return plt.figure(1, (2, 2))
 
-    try:
-        scheduler = schedulers[opt.sche]
-    except KeyError:
-        raise ValueError('unknown scheduler')
 
-    return scheduler
+def load_dataset(opt):
+    if opt.dataset == 'Sprite':
+        path = opt.dataset_path
+        from sprites_dataloader import Sprite
+
+        with open(path + 'sprites_X_train.npy', 'rb') as f:
+            X_train = np.load(f)
+        with open(path + 'sprites_X_test.npy', 'rb') as f:
+            X_test = np.load(f)
+        with open(path + 'sprites_A_train.npy', 'rb') as f:
+            A_train = np.load(f)
+        with open(path + 'sprites_A_test.npy', 'rb') as f:
+            A_test = np.load(f)
+        with open(path + 'sprites_D_train.npy', 'rb') as f:
+            D_train = np.load(f)
+        with open(path + 'sprites_D_test.npy', 'rb') as f:
+            D_test = np.load(f)
+
+        train_data = Sprite(data=X_train, A_label=A_train, D_label=D_train)
+        test_data = Sprite(data=X_test, A_label=A_test, D_label=D_test)
+
+    else:
+        raise ValueError('no implementation of dataset {}'.format(opt.dataset))
+
+    return train_data, test_data
 
 
 def define_seed(opt):
@@ -112,57 +152,3 @@ def define_seed(opt):
     torch.cuda.manual_seed(opt.seed)
     torch.cuda.manual_seed_all(opt.seed)
     torch.backends.cudnn.deterministic = True
-
-
-def use_multiple_gpus_if_possible(model, log_file, opt):
-    num_gpus = torch.cuda.device_count()
-    if num_gpus > 1:
-        print_log(f"Running is using {num_gpus} GPUs!", log_file)
-        opt.device = 'cuda'
-        model = nn.DataParallel(model)
-    return model
-
-
-def get_gpu_unique_id():
-    # Initialize NVML
-    nvmlInit()
-
-    # Get the handle for the first GPU device
-    handle = nvmlDeviceGetHandleByIndex(0)
-
-    # Get the GPU UUID
-    try:
-        uuid = nvmlDeviceGetUUID(handle)
-        return uuid
-    except Exception:
-        return False
-
-    # Shutdown NV ML
-    nvmlShutdown()
-
-
-def get_ip():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        # This command doesn't actually connect to the external server, it just gets your IP.
-        s.connect(('10.255.255.255', 1))
-        IP = s.getsockname()[0]
-    except Exception:
-        IP = False
-    finally:
-        s.close()
-    return IP
-
-
-def frange_cycle_cosine(start, stop, n_epoch, n_cycle=4, ratio=0.5):
-    L = np.ones(n_epoch)
-    period = n_epoch / n_cycle
-    step = (stop - start) / (period * ratio)  # step is in [0,1]
-
-    for c in range(n_cycle):
-        v, i = start, 0
-        while v <= stop:
-            L[int(i + c * period)] = 0.5 - .5 * math.cos(v * math.pi)
-            v += step
-            i += 1
-    return L

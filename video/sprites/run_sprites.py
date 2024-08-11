@@ -34,7 +34,7 @@ parser.add_argument('--neptune', default=True, type=bool, help='activate neptune
 parser.add_argument('--dataset', default='Sprite', type=str, help='dataset to train')
 parser.add_argument("--dataset_path", default='/cs/cs_groups/azencot_group/datasets/SPRITES_ICML/datasetICML/')
 parser.add_argument('--frames', default=8, type=int, help='number of frames, 8 for sprite, 15 for digits and MUGs')
-parser.add_argument('--channels', default=3, type=int, help='number of channels in images')
+parser.add_argument('--channels', default=3, type=int, help='number of channels in video')
 parser.add_argument('--image_width', default=64, type=int, help='the height / width of the input image to network')
 parser.add_argument('--decoder', default='ConvT', type=str, help='Upsampling+Conv or Transpose Conv: Conv or ConvT')
 
@@ -228,7 +228,7 @@ def main(opt):
         for i, data in enumerate(train_loader):
 
             progress.update(i + 1)
-            x, label_A, label_D = reorder(data['images']), data['A_label'], data['D_label']
+            x, label_A, label_D = reorder(data['video']), data['A_label'], data['D_label']
             x, label_A, label_D = x.cuda(), label_A.cuda(), label_D.cuda()
 
             recon_seq, recon_frame, kld_f, kld_z = train(x, dbse, optimizer, opt)
@@ -262,7 +262,7 @@ def main(opt):
         if epoch == opt.nEpoch - 1 or epoch % opt.evl_interval == 0:
             val_mse_seq = val_mse_frame = val_kld_f = val_kld_z = 0.
             for i, data in enumerate(test_loader):
-                x, label_A, label_D = reorder(data['images']), data['A_label'], data['D_label']
+                x, label_A, label_D = reorder(data['video']), data['A_label'], data['D_label']
                 x, label_A, label_D = x.cuda(), label_A.cuda(), label_D.cuda()
 
                 with torch.no_grad():
