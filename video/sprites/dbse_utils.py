@@ -1,9 +1,16 @@
-import torch
+import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 
 # ---------------- encoder -----------------------
 class dcgan_conv(nn.Module):
+    """
+    Convolutional block for the DCGAN architecture.
+
+    :param nin: Number of input channels.
+    :param nout: Number of output channels.
+    :return: Forward pass output.
+    """
     def __init__(self, nin, nout):
         super(dcgan_conv, self).__init__()
         self.main = nn.Sequential(
@@ -16,6 +23,13 @@ class dcgan_conv(nn.Module):
         return self.main(input)
 
 class encoder(nn.Module):
+    """
+    Encoder for a generative model using DCGAN architecture.
+
+    :param dim: Dimension of the latent space.
+    :param nc: Number of input channels (default is 1).
+    :return: Forward pass output and intermediate states.
+    """
     def __init__(self, dim, nc=1):
         super(encoder, self).__init__()
         self.dim = dim
@@ -49,6 +63,13 @@ class encoder(nn.Module):
 # Using transpose conv as the block to up-sample
 """
 class dcgan_upconv(nn.Module):
+    """
+    Transposed convolutional block for upsampling in DCGAN.
+
+    :param nin: Number of input channels.
+    :param nout: Number of output channels.
+    :return: Forward pass output.
+    """
     def __init__(self, nin, nout):
         super(dcgan_upconv, self).__init__()
         self.main = nn.Sequential(
@@ -61,6 +82,13 @@ class dcgan_upconv(nn.Module):
         return self.main(input)
 
 class decoder_convT(nn.Module):
+    """
+    Decoder using transposed convolution for reconstructing the image.
+
+    :param dim: Dimension of the latent space.
+    :param nc: Number of output channels (default is 1).
+    :return: Forward pass output.
+    """
     def __init__(self, dim, nc=1):
         super(decoder_convT, self).__init__()
         self.dim = dim
@@ -96,6 +124,13 @@ class decoder_convT(nn.Module):
 
 
 class decoder_convT_static(nn.Module):
+    """
+    Static decoder using transposed convolution for reconstructing the image.
+
+    :param dim: Dimension of the latent space.
+    :param nc: Number of output channels (default is 1).
+    :return: Forward pass output.
+    """
     def __init__(self, dim, nc=1):
         super(decoder_convT_static, self).__init__()
         self.dim = dim
@@ -135,6 +170,13 @@ class decoder_convT_static(nn.Module):
 """
 
 class upconv(nn.Module):
+    """
+    Upsampling block using bilinear interpolation and convolution.
+
+    :param nc_in: Number of input channels.
+    :param nc_out: Number of output channels.
+    :return: Forward pass output.
+    """
     def __init__(self, nc_in, nc_out):
         super().__init__()
         self.conv = nn.Conv2d(nc_in, nc_out, 3, 1, 1)
@@ -145,6 +187,13 @@ class upconv(nn.Module):
         return F.relu(self.norm(self.conv(out)))
 
 class decoder_conv(nn.Module):
+    """
+    Decoder using a combination of transposed convolution and upsampling.
+
+    :param dim: Dimension of the latent space.
+    :param nc: Number of output channels (default is 1).
+    :return: Forward pass output.
+    """
     def __init__(self, dim, nc=1):
         super(decoder_conv, self).__init__()
         self.dim = dim
@@ -174,6 +223,13 @@ class decoder_conv(nn.Module):
         return output
 
 class decoder_conv_static(nn.Module):
+    """
+    Static decoder using a combination of transposed convolution and upsampling.
+
+    :param dim: Dimension of the latent space.
+    :param nc: Number of output channels (default is 1).
+    :return: Forward pass output.
+    """
     def __init__(self, dim, nc=1):
         super(decoder_conv_static, self).__init__()
         self.dim = dim
@@ -200,3 +256,36 @@ class decoder_conv_static(nn.Module):
         output = output.view(input.shape[0], output.shape[1], output.shape[2], output.shape[3])
 
         return output
+
+class DbseLoss(object):
+    """
+    Class for tracking and averaging loss values.
+
+    :return: None
+    """
+    def __init__(self):
+        self.reset()
+
+    def update(self, recon_seq, recon_frame, kld_f, kld_z):
+        """Update loss values with new reconstructions and KLDs.
+
+        :param recon_seq: Reconstruction loss for sequences.
+        :param recon_frame: Reconstruction loss for frames.
+        :param kld_f: Kullback-Leibler divergence for frames.
+        :param kld_z: Kullback-Leibler divergence for latent space.
+        :return: None
+        """
+        self.recon_seq.append(recon_seq)
+        self.recon_frame.append(recon_frame)
+        self.kld_f.append(kld_f)
+        self.kld_z.append(kld_z)
+
+    def reset(self):
+        """Reset the loss values.
+
+        :return: None
+        """
+        self.recon_seq = []
+        self.recon_frame = []
+        self.kld_f = []
+        self.kld_z = []

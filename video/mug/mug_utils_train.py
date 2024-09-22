@@ -1,15 +1,9 @@
-import os
-import shutil
 import torch
 import torch.nn.functional as F
 import numpy as np
-from utils import reorder, KL_divergence, inception_score, entropy_Hy, entropy_Hyx
+from utils import KL_divergence, inception_score, entropy_Hy, entropy_Hyx
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-from sklearn.manifold import TSNE
-from neptune_utils.neptune_utils import log_to_neptune, upload_image_to_neptune
-from PIL import Image
-import itertools
+
 
 action_labels_dic = {
     0: 'anger',
@@ -19,120 +13,28 @@ action_labels_dic = {
     4: 'sadness',
     5: 'surprise',
 }
-static_labels_dic = {i: str(i) for i in range(51)}
 
 
 def count_D(pred, label, mode=1):
+    """Check if predictions match the labels based on the specified mode.
+
+    :param pred: Predicted values.
+    :param label: Ground truth labels.
+    :param mode: Mode for comparison (default is 1).
+    :return: Boolean array indicating whether predictions match labels.
+    """
     return (pred // mode) == (label // mode)
 
 
-def check_cls_sprites(opt, dbse, classifier, test_loader, run):
-    e_values_action, e_values_skin, e_values_pant, e_values_top, e_values_hair = [], [], [], [], []
-    for epoch in range(opt.niter):
+def check_cls_mug(opt, model, classifier, test_loader):
+    """Evaluate the model's classification accuracy on the MUG dataset.
 
-        print("Epoch", epoch)
-        dbse.eval()
-        mean_acc0_sample, mean_acc1_sample, mean_acc2_sample, mean_acc3_sample, mean_acc4_sample = 0, 0, 0, 0, 0
-        pred1_all, pred2_all, label2_all = list(), list(), list()
-        label_gt = list()
-        for i, data in enumerate(test_loader):
-            x, label_A, label_D = reorder(data['video']), data['A_label'][:, 0], data['D_label'][:, 0]
-            x, label_A, label_D = x.cuda(), label_A.cuda(), label_D.cuda()
-
-            if opt.type_gt == "action":
-                recon_x_sample, recon_x = dbse.forward_fixed_action_for_classification(x)
-            else:
-                recon_x_sample, recon_x = dbse.forward_fixed_content_for_classification(x)
-
-            with torch.no_grad():
-                pred_action1, pred_skin1, pred_pant1, pred_top1, pred_hair1 = classifier(x)
-                pred_action2, pred_skin2, pred_pant2, pred_top2, pred_hair2 = classifier(recon_x_sample)
-
-                pred1 = F.softmax(pred_action1, dim=1)
-                pred2 = F.softmax(pred_action2, dim=1)
-
-            label2 = np.argmax(pred2.detach().cpu().numpy(), axis=1)
-            label2_all.append(label2)
-
-            pred1_all.append(pred1.detach().cpu().numpy())
-            pred2_all.append(pred2.detach().cpu().numpy())
-            label_gt.append(np.argmax(label_D.detach().cpu().numpy(), axis=1))
-
-            def count_D(pred, label, mode=1):
-                return (pred // mode) == (label // mode)
-
-            # action
-            acc0_sample = (np.argmax(pred_action2.detach().cpu().numpy(), axis=1)
-                           == np.argmax(label_D.cpu().numpy(), axis=1)).mean()
-            # skin
-            acc1_sample = (np.argmax(pred_skin2.detach().cpu().numpy(), axis=1)
-                           == np.argmax(label_A[:, 0].cpu().numpy(), axis=1)).mean()
-            # pant
-            acc2_sample = (np.argmax(pred_pant2.detach().cpu().numpy(), axis=1)
-                           == np.argmax(label_A[:, 1].cpu().numpy(), axis=1)).mean()
-            # top
-            acc3_sample = (np.argmax(pred_top2.detach().cpu().numpy(), axis=1)
-                           == np.argmax(label_A[:, 2].cpu().numpy(), axis=1)).mean()
-            # hair
-            acc4_sample = (np.argmax(pred_hair2.detach().cpu().numpy(), axis=1)
-                           == np.argmax(label_A[:, 3].cpu().numpy(), axis=1)).mean()
-            mean_acc0_sample += acc0_sample
-            mean_acc1_sample += acc1_sample
-            mean_acc2_sample += acc2_sample
-            mean_acc3_sample += acc3_sample
-            mean_acc4_sample += acc4_sample
-
-        print(
-            'Test sample: action_Acc: {:.2f}% skin_Acc: {:.2f}% pant_Acc: {:.2f}% top_Acc: {:.2f}% hair_Acc: {:.2f}% '.format(
-                mean_acc0_sample / len(test_loader) * 100,
-                mean_acc1_sample / len(test_loader) * 100, mean_acc2_sample / len(test_loader) * 100,
-                mean_acc3_sample / len(test_loader) * 100, mean_acc4_sample / len(test_loader) * 100))
-
-        label2_all = np.hstack(label2_all)
-        label_gt = np.hstack(label_gt)
-        pred1_all = np.vstack(pred1_all)
-        pred2_all = np.vstack(pred2_all)
-
-        acc = (label_gt == label2_all).mean()
-        kl = KL_divergence(pred2_all, pred1_all)
-
-        nSample_per_cls = min([(label_gt == i).sum() for i in np.unique(label_gt)])
-        index = np.hstack([np.nonzero(label_gt == i)[0][:nSample_per_cls] for i in np.unique(label_gt)]).squeeze()
-        pred2_selected = pred2_all[index]
-
-        IS = inception_score(pred2_selected)
-        H_yx = entropy_Hyx(pred2_selected)
-        H_y = entropy_Hy(pred2_selected)
-
-        print('acc: {:.2f}%, kl: {:.4f}, IS: {:.4f}, H_yx: {:.4f}, H_y: {:.4f}'.format(acc * 100, kl, IS, H_yx, H_y))
-
-        e_values_action.append(mean_acc0_sample / len(test_loader) * 100)
-        e_values_skin.append(mean_acc1_sample / len(test_loader) * 100)
-        e_values_pant.append(mean_acc2_sample / len(test_loader) * 100)
-        e_values_top.append(mean_acc3_sample / len(test_loader) * 100)
-        e_values_hair.append(mean_acc4_sample / len(test_loader) * 100)
-
-    if run and opt.type_gt == "action":
-        # action acc should be high, other low
-        run['action/a_action'].log(np.mean(e_values_action))
-        run['action/a_skin'].log(np.mean(e_values_skin))
-        run['action/a_pant'].log(np.mean(e_values_pant))
-        run['action/a_top'].log(np.mean(e_values_top))
-        run['action/a_hair'].log(np.mean(e_values_hair))
-
-    elif run:
-        # action acc should be low, other high
-        run['static/s_action'].log(np.mean(e_values_action))
-        run['static/s_skin'].log(np.mean(e_values_skin))
-        run['static/s_pant'].log(np.mean(e_values_pant))
-        run['static/s_top'].log(np.mean(e_values_top))
-        run['static/s_hair'].log(np.mean(e_values_hair))
-
-    return np.mean(e_values_action), np.mean(e_values_skin), np.mean(e_values_pant), np.mean(e_values_top), np.mean(
-        e_values_hair)
-
-
-def check_cls_mug(opt, model, classifier, test_loader, run):
+    :param opt: Options/parameters for evaluation.
+    :param model: The model to evaluate.
+    :param classifier: The classifier to use for predictions.
+    :param test_loader: DataLoader for the test dataset.
+    :return: Average accuracy for action and subject classifications.
+    """
     e_values_action, e_values_subj = [], []
     matrix = np.zeros((6, 6))
     for epoch in range(4):
@@ -201,26 +103,31 @@ def check_cls_mug(opt, model, classifier, test_loader, run):
         e_values_action.append(mean_acc0_sample / len(test_loader) * 100)
         e_values_subj.append(mean_acc1_sample / len(test_loader) * 100)
 
-    if run and opt.type_gt == "action":
-        # action acc should be high, other low
-        run['action/a_action'].log(np.mean(e_values_action))
-        run['action/a_subj'].log(np.mean(e_values_subj))
-
-    elif run:
-        # action acc should be low, other high
-        run['static/s_action'].log(np.mean(e_values_action))
-        run['static/s_subj'].log(np.mean(e_values_subj))
-
     return np.mean(e_values_action), np.mean(e_values_subj)
 
 
 def pair_iterable(iterable):
+    """Create pairs from an iterable.
+
+    :param iterable: Iterable to create pairs from.
+    :return: Iterator of paired elements.
+    """
     """Create pairs from iterable."""
     iterable = iter(iterable)
     return zip(iterable, iterable)
 
 
 def test_swap(opt, model, classifier, test_loader, run, type='test'):
+    """Test the model's ability to swap motion and static content.
+
+    :param opt: Options for the test.
+    :param model: The model to evaluate.
+    :param classifier: The classifier to use for predictions.
+    :param test_loader: DataLoader for the test dataset.
+    :param run: Identifier for the run.
+    :param type: Type of test (default is 'test').
+    :return: Average accuracy for motion and static content swaps.
+    """
     values_motion_swap, values_static_swap = [], []
     for epoch in range(opt.niter):
         print("Epoch", epoch)
@@ -257,26 +164,38 @@ def test_swap(opt, model, classifier, test_loader, run, type='test'):
         values_motion_swap.append(mean_acc_motion * 100)
         values_static_swap.append(mean_acc_static * 100)
 
-    if run:
-        if type == "train":
-            log_to_neptune(run, {type + '/swap/acc_motion': np.mean(values_motion_swap),
-                                 type + '/swap/acc_static': np.mean(values_static_swap)})
-        else:
-            log_to_neptune(run, {'swap/acc_motion': np.mean(values_motion_swap),
-                                 'swap/acc_static': np.mean(values_static_swap)})
-
 
 def arg_max(pred):
+    """Get the index of the maximum value in the predictions.
+
+    :param pred: Predicted values.
+    :return: Indices of the maximum values.
+    """
     return np.argmax(pred.detach().cpu().numpy(), axis=1)
 
 
 def get_labels(classifier, data):
+    """Obtain action and subject labels from the classifier.
+
+    :param classifier: The classifier to use for predictions.
+    :param data: Input data for prediction.
+    :return: Tuple of action and subject labels.
+    """
     with torch.no_grad():
         pred_action, pred_subject = classifier(data)
     return arg_max(pred_action), arg_max(pred_subject)
 
 
 def create_dict(name, orig_action, pred_action, orig_subject, pred_subject):
+    """Create a dictionary to store image predictions and labels.
+
+    :param name: Image name.
+    :param orig_action: Original action label.
+    :param pred_action: Predicted action label.
+    :param orig_subject: Original subject label.
+    :param pred_subject: Predicted subject label.
+    :return: Dictionary containing image name and labels.
+    """
     return {'Img': name,
             'A': action_labels_dic[orig_action],
             'Pred A': action_labels_dic[pred_action],
@@ -286,53 +205,17 @@ def create_dict(name, orig_action, pred_action, orig_subject, pred_subject):
             'S_correct?': pred_subject == orig_subject}
 
 
-def save_image_helper(sequence_of_images, title_dictionary, image_name, directory_path):
-    fig = plt.figure(figsize=(15, 1))
-    for j, frame in enumerate(sequence_of_images):
-        plt.subplot(1, sequence_of_images.shape[0], j + 1)
-        numpy_frame = frame.detach().cpu().numpy()
-        plt.imshow(numpy_frame.transpose((1, 2, 0)))  # assuming the image data is in CHW format
-        plt.axis('off')
-    plt.suptitle('; '.join([f'{key}: {value}' for key, value in title_dictionary.items()]))
-    fig.savefig(os.path.join(directory_path, f'{image_name}.png'))
-    plt.close(fig)
-
-
-def merge_images(directory, output_path):
-    # Get all image files in the directory
-    image_files = [os.path.join(directory, file) for file in os.listdir(directory) if
-                   file.endswith(('.jpg', '.jpeg', '.png'))]
-
-    image_files.sort()
-
-    # Load video
-    images = [Image.open(img) for img in image_files]
-
-    # Make sure video got same width
-    max_width = max(image.size[0] for image in images)
-    images = [image.resize((max_width, int(max_width * image.size[1] / image.size[0])), Image.ANTIALIAS) for image in
-              images]
-
-    # Get total height
-    total_height = sum(image.size[1] for image in images)
-
-    # Create new image with width and height
-    new_img = Image.new('RGB', (max_width, total_height))
-
-    # Set paste positions
-    y_offset = 0
-    for image in images:
-        new_img.paste(image, (0, y_offset))
-        y_offset += image.height
-
-    # Save the image
-    new_img.save(output_path)
-
-    # Return the absolute path of the saved image
-    return os.path.abspath(output_path)
-
-
 def test_swap_table(opt, model, classifier, test_loader, run, type='test'):
+    """Evaluate and visualize swap actions in a table format.
+
+    :param opt: Options for the test.
+    :param model: The model to evaluate.
+    :param classifier: The classifier to use for predictions.
+    :param test_loader: DataLoader for the test dataset.
+    :param run: Identifier for the run.
+    :param type: Type of test (default is 'test').
+    :return: Average accuracy for motion and static content swaps.
+    """
     values_motion_swap, values_static_swap = [], []
     matrix_predicted_labels = np.zeros((6, 6))
     for epoch in range(opt.niter):
@@ -402,18 +285,19 @@ def test_swap_table(opt, model, classifier, test_loader, run, type='test'):
     # plt.savefig('table_image.png')  # Save the image as a file
     plt.close()  # Close the plot to release resources
 
-    if run:
-        if type == "train":
-            log_to_neptune(run, {type + '/swap/acc_motion': np.mean(values_motion_swap),
-                                 type + '/swap/acc_static': np.mean(values_static_swap)})
-        else:
-            log_to_neptune(run, {'swap/acc_motion': np.mean(values_motion_swap),
-                                 'swap/acc_static': np.mean(values_static_swap)})
-
     return np.mean(values_motion_swap), np.mean(values_static_swap)
 
 
 def check_cls_mug_eval(opt, model, classifier, test_loader, type_gt):
+    """Evaluate classification accuracy and collect mistake sequences.
+
+    :param opt: Options/parameters for evaluation.
+    :param model: The model to evaluate.
+    :param classifier: The classifier to use for predictions.
+    :param test_loader: DataLoader for the test dataset.
+    :param type_gt: Type of ground truth (action or subject).
+    :return: Average accuracy for action and subject classifications, and mistake sequences.
+    """
     e_values_action, e_values_subj = [], []
     mistake_sequences = []
     flag = 0
@@ -502,8 +386,17 @@ def check_cls_mug_eval(opt, model, classifier, test_loader, type_gt):
     return np.mean(e_values_action), np.mean(e_values_subj), mistake_sequences
 
 
-
 def check_cls_mug_table(opt, model, classifier, test_loader, run, type='test'):
+    """Evaluate classification accuracy and visualize results in a table format.
+
+    :param opt: Options/parameters for evaluation.
+    :param model: The model to evaluate.
+    :param classifier: The classifier to use for predictions.
+    :param test_loader: DataLoader for the test dataset.
+    :param run: Identifier for the run.
+    :param type: Type of test (default is 'test').
+    :return: Average accuracy for action and subject classifications.
+    """
     e_values_action, e_values_subj = [], []
     matrix_predicted_labels = np.zeros((6, 6))
     for epoch in range(opt.niter):

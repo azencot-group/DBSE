@@ -29,13 +29,13 @@ class DBSE(nn.Module):
 
         # Frame encoder and decoder
         if opt.image_width == 64:
-            from dcgan_64 import encoder
+            from dbse_utils import encoder
             if opt.decoder == 'Conv':
-                from dcgan_64 import decoder_conv as decoder
-                from dcgan_64 import decoder_conv_static as decoder_static
+                from dbse_utils import decoder_conv as decoder
+                from dbse_utils import decoder_conv_static as decoder_static
             elif opt.decoder == 'ConvT':
-                from dcgan_64 import decoder_convT as decoder
-                from dcgan_64 import decoder_convT_static as decoder_static
+                from dbse_utils import decoder_convT as decoder
+                from dbse_utils import decoder_convT_static as decoder_static
             else:
                 raise ValueError('no implementation of decoder {}'.format(opt.decoder))
         else:
@@ -354,7 +354,7 @@ class classifier_Sprite_all(nn.Module):
         self.channels = opt.channels  # frame feature
         self.hidden_dim = opt.rnn_size
         self.frames = opt.frames
-        from dcgan_64 import encoder
+        from dbse_utils import encoder
         self.encoder = encoder(self.g_dim, self.channels)
         self.bilstm = nn.LSTM(self.g_dim, self.hidden_dim, 1, bidirectional=True, batch_first=True)
         self.cls_skin = nn.Sequential(
@@ -407,7 +407,7 @@ class classifier_MUG(nn.Module):
         self.channels = opt.channels  # frame feature
         self.hidden_dim = opt.rnn_size
         self.frames = opt.frames
-        from dcgan_64 import encoder
+        from dbse_utils import encoder
         self.encoder = encoder(self.g_dim, self.channels)
         self.bilstm = nn.LSTM(self.g_dim, self.hidden_dim, 1, bidirectional=True, batch_first=True)
         self.cls_dyn = nn.Sequential(

@@ -3,34 +3,24 @@ import random
 import torch
 import numpy as np
 
-import torchvision
-from matplotlib import pyplot as plt
 
-
-# matplotlib.use('agg')
-
-
-# X, X, 64, 64, 3 -> # X, X, 3, 64, 64
 def reorder(sequence):
+    """
+    Reorders the dimensions of the input sequence tensor.
+
+    :param sequence: A tensor of shape (batch_size, time, channels, height, width).
+    :return: A tensor with reordered dimensions (batch_size, time, height, width, channels).
+    """
     return sequence.permute(0, 1, 4, 2, 3)
 
 
-def get_batch(train_loader):
-    while True:
-        for sequence in train_loader:
-            yield sequence
-
-
-def print_log(print_string, log=None, verbose=True):
-    if verbose:
-        print("{}".format(print_string))
-    if log is not None:
-        log = open(log, 'a')
-        log.write('{}\n'.format(print_string))
-        log.close()
-
-
 def clear_progressbar():
+    """
+    Clears the progress bar in the terminal by moving the cursor up and deleting previous lines.
+    This is useful for refreshing the progress display.
+
+    :return: None.
+    """
     # moves up 3 lines
     print("\033[2A")
     # deletes the whole line, regardless of character position
@@ -43,6 +33,12 @@ import torch.nn as nn
 
 
 def init_weights(model):
+    """
+    Initializes the weights of the model layers using standard initialization techniques.
+
+    :param model: A neural network model where layers such as Conv2d, BatchNorm2d, and Linear will be initialized.
+    :return: None.
+    """
     for m in model.modules():
         if isinstance(m, nn.Conv2d):
             nn.init.normal_(m.weight, 0, 0.01)
@@ -57,12 +53,26 @@ def init_weights(model):
 
 
 def entropy_Hy(p_yx, eps=1E-16):
+    """
+    Computes the entropy H(y) given the conditional probability distribution p(y|x).
+
+    :param p_yx: A 2D array of conditional probabilities p(y|x) of shape (N, C), where N is the number of samples and C is the number of classes.
+    :param eps: A small value to avoid logarithm of zero (default: 1E-16).
+    :return: A scalar representing the entropy H(y).
+    """
     p_y = p_yx.mean(axis=0)
     sum_h = (p_y * np.log(p_y + eps)).sum() * (-1)
     return sum_h
 
 
 def entropy_Hyx(p, eps=1E-16):
+    """
+    Computes the conditional entropy H(y|x) for each sample in the distribution.
+
+    :param p: A 2D array of conditional probabilities p(y|x) of shape (N, C), where N is the number of samples and C is the number of classes.
+    :param eps: A small value to avoid logarithm of zero (default: 1E-16).
+    :return: A scalar representing the conditional entropy H(y|x).
+    """
     sum_h = (p * np.log(p + eps)).sum(axis=1)
     # average over video
     avg_h = np.mean(sum_h) * (-1)
@@ -70,6 +80,13 @@ def entropy_Hyx(p, eps=1E-16):
 
 
 def inception_score(p_yx, eps=1E-16):
+    """
+    Computes the Inception Score (IS) from the conditional probability distribution p(y|x).
+
+    :param p_yx: A 2D array of conditional probabilities p(y|x) of shape (N, C), where N is the number of samples and C is the number of classes.
+    :param eps: A small value to avoid logarithm of zero (default: 1E-16).
+    :return: A scalar representing the Inception Score.
+    """
     # calculate p(y)
     p_y = np.expand_dims(p_yx.mean(axis=0), 0)
     # kl divergence for each image
@@ -84,6 +101,14 @@ def inception_score(p_yx, eps=1E-16):
 
 
 def KL_divergence(P, Q, eps=1E-16):
+    """
+    Computes the Kullback-Leibler (KL) divergence between two distributions P and Q.
+
+    :param P: A 2D array representing the true probability distribution of shape (N, C).
+    :param Q: A 2D array representing the approximate probability distribution of shape (N, C).
+    :param eps: A small value to avoid logarithm of zero (default: 1E-16).
+    :return: A scalar representing the KL divergence between P and Q.
+    """
     kl_d = P * (np.log(P + eps) - np.log(Q + eps))
     # sum over classes
     sum_kl_d = kl_d.sum(axis=1)
@@ -92,26 +117,14 @@ def KL_divergence(P, Q, eps=1E-16):
     return avg_kl_d
 
 
-def imshow_seq_simple(data, neptune=None, file_name="", plot=False):
-    # npimg = data.numpy()
-    npimg = data
-    np.transpose(torchvision.utils.make_grid(torch.tensor(npimg)), (1, 2, 0))
-    frame1 = plt.gca()
-    plt.imshow(np.transpose(torchvision.utils.make_grid(torch.tensor(npimg)), (1, 2, 0)))
-    frame1.axes.get_xaxis().set_visible(False)
-    frame1.axes.get_yaxis().set_visible(False)
-    # plt.savefig('./results/mug_simclr_examples.pdf', transparent=True, bbox_inches='tight', pad_inches=0,
-    #             dpi=300)
-    if neptune is not None:
-        fig = plt.figure(1, (2, 2))
-        neptune[file_name].log(fig)
-    elif plot:
-        plt.show()
-    else:
-        return plt.figure(1, (2, 2))
-
-
 def load_dataset(opt):
+    """
+    Loads a dataset based on the provided option settings.
+
+    :param opt: An object with dataset configuration options. The attribute `dataset` specifies the dataset type, and `dataset_path` specifies the path to the dataset files.
+    :return: A tuple (train_data, test_data), where each is a dataset object.
+    :raises ValueError: If the dataset is not implemented.
+    """
     if opt.dataset == 'Sprite':
         path = opt.dataset_path
         from sprites_dataloader import Sprite
@@ -139,6 +152,12 @@ def load_dataset(opt):
 
 
 def define_seed(opt):
+    """
+    Defines and sets the random seed for various modules to ensure reproducibility.
+
+    :param opt: An object containing a seed attribute. If not provided, a random seed will be generated.
+    :return: None.
+    """
     if opt.seed is None:
         opt.seed = random.randint(1, 10000)
         print("Random Seed (automatically generated): ", opt.seed)
