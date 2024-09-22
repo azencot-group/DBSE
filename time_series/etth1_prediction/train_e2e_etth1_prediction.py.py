@@ -6,7 +6,6 @@ import random
 import torch
 import torch.nn as nn
 import numpy as np
-import neptune.new as neptune
 
 currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
@@ -128,13 +127,6 @@ def run_epoch(args, model, data_loader, optimizer, train=True, test=False):
                 losses = compute_loss(x_seq, model, x_lens, args, m_mask=mask_seq, return_parts=True)
 
         losses = np.asarray([loss.detach().cpu().numpy() for loss in losses])
-        if args.neptune_run:
-            tr_va_str = 'test' if test else 'train' if train else 'valid'
-            args.neptune_run[f'{tr_va_str}/loss'].log(losses[0])
-            args.neptune_run[f'{tr_va_str}/seq_loss'].log(losses[1])
-            args.neptune_run[f'{tr_va_str}/frame_loss'].log(losses[2])
-            args.neptune_run[f'{tr_va_str}/kld_f'].log(losses[3])
-            args.neptune_run[f'{tr_va_str}/kld_z'].log(losses[4])
 
         LOSSES.append(losses)
     LOSSES = np.stack(LOSSES)
@@ -193,16 +185,12 @@ def train_mo_mi(args, model, train_loader, validation_loader, file_name, lr=1e-4
         print('=' * 30)
         print(f'Epoch {epoch}, (Learning rate: {lr:.5f})')
         print(print_losses('Training', ep_loss, ep_seq_loss, ep_frame_loss, ep_kld_f, ep_kld_z))
-        if args.neptune_run:
-            args.neptune_run[f'train/dbse-epoch-loss'].log(ep_loss)
 
         model.eval()  # Set the model to evaluation mode
         with torch.no_grad():  # Disable gradient computation for validation
             ep_loss, ep_seq_loss, ep_frame_loss, ep_kld_f, ep_kld_z = run_epoch(args, model, validation_loader,
                                                                                 optimizer, train=False, test=False)
         print(print_losses('Validation', ep_loss, ep_seq_loss, ep_frame_loss, ep_kld_f, ep_kld_z))
-        if args.neptune_run:
-            args.neptune_run[f'validation/epoch-loss'].log(ep_loss)
 
         # save model
         torch.save(model.state_dict(), f'{args.ckpt}{file_name}')
@@ -273,8 +261,6 @@ def train_rep_model(args, n_epochs, trainset, validset, testset):
                                                                            train=False, test=True)
     print(f'\nDBSE performance on {args.data} data')
     print('{}'.format(print_losses('Test', test_loss, test_nll, test_nll_stat, test_kld_f, test_kld_z)))
-    if args.neptune_run:
-        args.neptune_run[f'test/final-dbse-model-loss'].log(test_loss)
 
     return rep_model
 
@@ -322,10 +308,6 @@ def train_predictor_and_test_avg_oil_temp(args, trainset, validset, testset, rep
                 print("Validation loss = %.3f" % (epoch_loss_val))
                 print('Test loss =  %.3f' % (te_loss))
 
-                if args.neptune_run:
-                    args.neptune_run[f'train-predictor/loss'].log(epoch_loss_train)
-                    args.neptune_run[f'val-predictor/loss'].log(epoch_loss_val)
-                    args.neptune_run[f'test-predictor/loss'].log(te_loss)
         test_loss.append(
             run_epoch_predictor(predictor_model, testset, rep_model, label_blocks=label_blocks_test, train=False))
 
@@ -364,7 +346,6 @@ if __name__ == "__main__":
 
     parser.add_argument('--note', default='sample', type=str, help='appx note')
     parser.add_argument('--seed', default=1234, type=int, help='random seed')
-    parser.add_argument('--neptune', default=True, type=bool, help='activate neptune tracking')
 
     args = parser.parse_args()
 
@@ -379,25 +360,9 @@ if __name__ == "__main__":
 
     cv_loss, cv_acc, cv_auroc = [], [], []
 
-    # Create Neptune
-    args.neptune_run = None
-    if args.neptune:
-        run = neptune.init_run(
-            project="Put here your project path",
-            api_token="Put your API token in your neptune run",
-        )  # your credentials
-        run['config/hyperparameters'] = vars(args)
-        run["sys/tags"].add(['ETTh1 - Average Oil Temp Prediction '])
-        args.neptune_run = run
 
     rep_model = None
     rep_model = train_rep_model(args, n_epochs, trainset, validset, testset)
     test_loss, test_acc, test_auroc = train_predictor_and_test_avg_oil_temp(args, trainset, validset, testset, rep_model)
 
     print("\n\n Final performance \t loss = %.3f +- %.3f" % (np.mean(test_loss), np.std(test_loss)))
-    if args.neptune_run:
-        args.neptune_run[f'Mean Absolute Error'].log(np.mean(test_loss))
-        args.neptune_run[f'Mean Absolute STD'].log(np.std(test_loss))
-
-    if args.neptune_run:
-        args.neptune_run.stop()

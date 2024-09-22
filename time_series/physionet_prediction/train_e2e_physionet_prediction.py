@@ -7,7 +7,6 @@ import torch
 import torch.nn as nn
 
 import numpy as np
-import neptune.new as neptune
 
 from sklearn.metrics import roc_auc_score, average_precision_score
 
@@ -131,14 +130,6 @@ def run_epoch(args, model, data_loader, optimizer, train=True, test=False):
                 losses = compute_loss(x_seq, model, x_lens, args, m_mask=mask_seq, return_parts=True)
 
         losses = np.asarray([loss.detach().cpu().numpy() for loss in losses])
-        if args.neptune_run:
-            tr_va_str = 'test' if test else 'train' if train else 'valid'
-            args.neptune_run[f'{tr_va_str}/loss'].log(losses[0])
-            args.neptune_run[f'{tr_va_str}/nll'].log(losses[1])
-            args.neptune_run[f'{tr_va_str}/nll_stat'].log(losses[2])
-            args.neptune_run[f'{tr_va_str}/kld_f'].log(losses[3])
-            args.neptune_run[f'{tr_va_str}/kld_z'].log(losses[4])
-
         LOSSES.append(losses)
     LOSSES = np.stack(LOSSES)
     return np.mean(LOSSES, axis=0)
@@ -201,16 +192,10 @@ def train_model(args, model, train_loader, validation_loader, file_name, lr=1e-4
         print(f'Epoch {epoch}, (Learning rate: {lr:.5f})')
         print(print_losses('Training', ep_loss, ep_nll, ep_nll_stat, ep_kld_f, ep_kld_z))
 
-        if args.neptune_run:
-            args.neptune_run[f'train/dbse-epoch-loss'].log(ep_loss)
-
         model.eval()  # Set the model to evaluation mode
         with torch.no_grad():  # Disable gradient computation for validation
             ep_loss, ep_nll, ep_nll_stat, ep_kld_f, ep_kld_z = run_epoch(args, model, validation_loader, optimizer, train=False, test=False)
         print(print_losses('Validation', ep_loss, ep_nll, ep_nll_stat, ep_kld_f, ep_kld_z))
-        if args.neptune_run:
-            args.neptune_run[f'validation/epoch-loss'].log(ep_loss)
-
         # save model
         torch.save(model.state_dict(), f'{args.ckpt}{file_name}')
 
@@ -251,8 +236,6 @@ def train_rep_model(args, n_epochs, trainset, validset, testset):
     test_loss, test_nll, test_nll_stat, test_kld_f, test_kld_z = run_epoch(args, rep_model, testset, optimizer=None, train=False, test=True)
     print(f'\nDBSE performance on {args.data} data')
     print('{}'.format(print_losses('Test', test_loss, test_nll, test_nll_stat, test_kld_f, test_kld_z)))
-    if args.neptune_run:
-        args.neptune_run[f'test/final-dbse-model-loss'].log(test_loss)
 
     return rep_model
 
@@ -289,21 +272,10 @@ def train_predictor_and_test_mortality(args, trainset, validset, testset, rep_mo
             print("Validation loss = %.3f \t Accuracy = %.3f \t AUROC = %.3f" % (
                 epoch_auroc_val, epoch_acc_val, epoch_auroc_val))
 
-            if args.neptune_run:
-                args.neptune_run[f'train-predictor/epoch_loss_train'].log(epoch_loss_train)
-                args.neptune_run[f'train-predictor/epoch_acc_train'].log(epoch_loss_train)
-                args.neptune_run[f'train-predictor/epoch_auroc_train'].log(epoch_auroc_train)
-                args.neptune_run[f'val-predictor/epoch_loss_val'].log(epoch_loss_val)
-                args.neptune_run[f'val-predictor/epoch_acc_val'].log(epoch_acc_val)
-                args.neptune_run[f'val-predictor/epoch_auroc_val'].log(epoch_auroc_val)
 
     test_loss, test_acc, test_auroc = run_epoch_predictor(predictor_model, testset, rep_model, train=False)
     print("\n Test performance \t loss = %.3f \t AUPRC = %.3f \t AUROC = %.3f" % (
                         test_loss, test_acc, test_auroc))
-    if args.neptune_run:
-        args.neptune_run[f'test-predictor/test_loss'].log(test_loss)
-        args.neptune_run[f'test-predictor/test_acc'].log(test_acc)
-        args.neptune_run[f'test-predictor/test_auroc'].log(test_auroc)
 
     torch.save(predictor_model.state_dict(), f'{args.ckpt}{file_name}')
     return test_loss, test_acc, test_auroc
@@ -341,7 +313,6 @@ if __name__=="__main__":
 
     parser.add_argument('--note', default='sample', type=str, help='appx note')
     parser.add_argument('--seed', default=1234, type=int, help='random seed')
-    parser.add_argument('--neptune', default=False, type=bool, help='activate neptune tracking')
 
     args = parser.parse_args()
     define_seed(args)
@@ -351,16 +322,6 @@ if __name__=="__main__":
     n_epochs = 250
     trainset, validset, testset, _ = physionet_data_loader(window_size=configs["window_size"], frame_ind=args.frame_ind, normalize="mean_zero")
 
-    # Create Neptune
-    args.neptune_run = None
-    if args.neptune:
-        run = neptune.init_run(
-            project="Put here your project path",
-            api_token="Put your API token in your neptune run",
-        )  # your credentials
-        run['config/hyperparameters'] = vars(args)
-        run["sys/tags"].add(['Physionet - Mortality Prediction'])
-        args.neptune_run = run
 
     rep_model = None
     cv_loss, cv_acc, cv_auroc = [], [], []
@@ -375,10 +336,3 @@ if __name__=="__main__":
 
     print("loss = %.3f $\pm$ %.3f \t AUPRC = %.3f $\pm$ %.3f \t AUROC = %.3f $\pm$ %.3f" % (np.mean(cv_loss), np.std(cv_loss), np.mean(cv_acc), np.std(cv_acc), np.mean(cv_auroc),np.std(cv_auroc)))
 
-    if args.neptune_run:
-        run['Final-Performance: predictor_test_loss'] = np.mean(cv_loss)
-        run['Final-Performance: predictor_test_acc'] = np.mean(cv_acc)
-        run['Final-Performance: predictor_test_auroc'] = np.mean(cv_auroc)
-
-    if args.neptune_run:
-        args.neptune_run.stop()

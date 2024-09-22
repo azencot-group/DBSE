@@ -7,7 +7,6 @@ import torch
 import torch.nn as nn
 
 import numpy as np
-import neptune.new as neptune
 
 
 currentdir = os.path.dirname(os.path.realpath(__file__))
@@ -82,13 +81,7 @@ def run_epoch(args, model, data_loader, optimizer, train=True, test=False):
                 losses = compute_loss(x_seq, model, x_lens, args, m_mask=mask_seq, return_parts=True)
 
         losses = np.asarray([loss.detach().cpu().numpy() for loss in losses])
-        if args.neptune_run:
-            tr_va_str = 'test' if test else 'train' if train else 'valid'
-            args.neptune_run[f'{tr_va_str}/loss'].log(losses[0])
-            args.neptune_run[f'{tr_va_str}/seq_loss'].log(losses[1])
-            args.neptune_run[f'{tr_va_str}/frame_loss'].log(losses[2])
-            args.neptune_run[f'{tr_va_str}/kld_f'].log(losses[3])
-            args.neptune_run[f'{tr_va_str}/kld_z'].log(losses[4])
+
 
         LOSSES.append(losses)
     LOSSES = np.stack(LOSSES)
@@ -105,15 +98,10 @@ def train_mo_mi(args, model, train_loader, validation_loader, file_name, lr=1e-4
         print('=' * 30)
         print(f'Epoch {epoch}, (Learning rate: {lr:.5f})')
         print(print_losses('Training', ep_loss, ep_seq_loss, ep_frame_loss, ep_kld_f, ep_kld_z))
-        if args.neptune_run:
-            args.neptune_run[f'train/dbse-epoch-loss'].log(ep_loss)
-
         model.eval()  # Set the model to evaluation mode
         with torch.no_grad():  # Disable gradient computation for validation
             ep_loss, ep_seq_loss, ep_frame_loss, ep_kld_f, ep_kld_z = run_epoch(args, model, validation_loader, optimizer, train=False, test=False)
         print(print_losses('Validation', ep_loss, ep_seq_loss, ep_frame_loss, ep_kld_f, ep_kld_z))
-        if args.neptune_run:
-            args.neptune_run[f'validation/epoch-loss'].log(ep_loss)
 
         # save model
         torch.save(model.state_dict(), f'{args.ckpt}{file_name}')
@@ -157,8 +145,6 @@ def train_rep_model(args, n_epochs, trainset, validset, testset):
     test_loss, test_nll, test_nll_stat, test_kld_f, test_kld_z = run_epoch(args, rep_model, testset, optimizer=None, train=False, test=True)
     print(f'\nDBSE performance on {args.data} data')
     print('{}'.format(print_losses('Test', test_loss, test_nll, test_nll_stat, test_kld_f, test_kld_z)))
-    if args.neptune_run:
-        args.neptune_run[f'test/final-dbse-model-loss'].log(test_loss)
 
     return rep_model
 
@@ -186,11 +172,6 @@ def train_classifier(trainset, validset, classifier_model, rep_model, n_epochs, 
             print("Training loss = %.3f \t Training accuracy = %.3f" % (train_loss, train_acc))
             print("Validation loss = %.3f \t Validation accuracy = %.3f" % (valid_loss, valid_acc))
 
-            if args.neptune_run:
-                args.neptune_run[f'train-classifier/epoch_loss_train'].log(train_loss)
-                args.neptune_run[f'train-classifier/epoch_acc_train'].log(train_acc)
-                args.neptune_run[f'val-classifier/epoch_loss_val'].log(valid_loss)
-                args.neptune_run[f'val-classifier/epoch_acc_val'].log(valid_acc)
 
 
 def run_classifier_epoch(classifier_model, rep_model, dataset, data, optimizer=None, train=False, repeat=5):
@@ -255,9 +236,6 @@ def classification_exp(representation_classifier, rep_model, args, data, dataset
 
     test_loss, test_acc = run_classifier_epoch(representation_classifier, rep_model, testset, data=data, train=False)
     print('Testset ==========> Accuracy = %.3f\n' % test_acc)
-    if args.neptune_run:
-        args.neptune_run[f'test-classifier/test_acc'].log(test_acc)
-        args.neptune_run[f'test-classifier/test_loss'].log(test_loss)
     return test_acc, test_loss
 
 def train_and_test_classifier(args, trainset, validset, testset, rep_model):
@@ -343,7 +321,6 @@ if __name__=="__main__":
 
     parser.add_argument('--note', default='sample', type=str, help='appx note')
     parser.add_argument('--seed', default=1234, type=int, help='random seed')
-    parser.add_argument('--neptune', default=False, type=bool, help='activate neptune tracking')
 
 
     args = parser.parse_args()
@@ -355,16 +332,6 @@ if __name__=="__main__":
         configs = json.load(config_file)[args.data]
     trainset, validset, testset, _ = physionet_data_loader(window_size=configs["window_size"], frame_ind=args.frame_ind, normalize="mean_zero")
 
-    # Create Neptune
-    args.neptune_run = None
-    if args.neptune:
-        run = neptune.init_run(
-            project="Put here your project path",
-            api_token="Put your API token in your neptune run",
-        )  # your credentials
-        run['config/hyperparameters'] = vars(args)
-        run["sys/tags"].add(['Physionet - Classifier'])
-        args.neptune_run = run
 
     rep_model = train_rep_model(args, n_epochs, trainset, validset, testset)
     test_accuracies, test_losses = train_and_test_classifier(args, trainset, validset, testset, rep_model)
@@ -374,9 +341,4 @@ if __name__=="__main__":
             100 * np.mean(test_accuracies), 100 * np.std(test_accuracies), np.mean(test_losses),
             np.std(test_losses)))
 
-    if args.neptune_run:
-        run['Final-Performance: classifier_test_acc'] = np.mean(100 * test_accuracies)
-        run['Final-Performance: classifier_test_loss'] = np.mean(test_losses)
 
-    if args.neptune_run:
-        args.neptune_run.stop()

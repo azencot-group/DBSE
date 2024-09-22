@@ -465,19 +465,6 @@ def get_phoneme_lists(phn_file, phn_set):
             ends.append(end)
 
     if phn_set != 60:
-        # Filtering out consecutive silences by applying a mask with `True` marking
-        # which sils to remove
-        # e.g.
-        # phonemes          [  "a", "sil", "sil",  "sil",   "b"]
-        # ends              [   1 ,    2 ,    3 ,     4 ,    5 ]
-        # ---
-        # create:
-        # remove_sil_mask   [False,  True,  True,  False,  False]
-        # ---
-        # so end result is:
-        # phonemes ["a", "sil", "b"]
-        # ends     [  1,     4,   5]
-
         remove_sil_mask = [True if x == "sil" else False for x in phonemes]
 
         for i, val in enumerate(remove_sil_mask):
