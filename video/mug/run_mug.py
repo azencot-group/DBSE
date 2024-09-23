@@ -73,7 +73,7 @@ def process_train(classifier, epoch_loss, model, opt, optimizer, run, scheduler,
         opt.epoch_size = len(train_loader)
         progress = progressbar.ProgressBar(maxval=len(train_loader)).start()
 
-        opt.weight_f = beta_np_inc[epoch - 1] * opt.w_f
+        opt.weight_f = beta_np_inc[epoch - 1] * opt.weight_f
         opt.weight_z = beta_np_inc[epoch - 1]
 
         for i, data in enumerate(train_loader):

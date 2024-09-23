@@ -175,10 +175,10 @@ def main(opt):
         if epoch % opt.evl_interval == 0 or epoch == opt.nEpoch - 1:
             dbse.eval()
             net2save = dbse.module if torch.cuda.device_count() > 1 else dbse
-            torch.save({
-                'model': net2save.state_dict(),
-                'optimizer': optimizer.state_dict()},
-                '%s/model%d.pth' % (opt.log_dir, opt.nEpoch))
+            # torch.save({
+            #     'model': net2save.state_dict(),
+            #     'optimizer': optimizer.state_dict()},
+            #     '%s/model%d.pth' % (opt.log_dir, opt.nEpoch))
 
         if epoch == opt.nEpoch - 1 or epoch % opt.evl_interval == 0:
             val_mse_seq = val_mse_frame = val_kld_f = val_kld_z = 0.

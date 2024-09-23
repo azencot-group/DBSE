@@ -26,7 +26,7 @@ def count_D(pred, label, mode=1):
     return (pred // mode) == (label // mode)
 
 
-def check_cls_mug(opt, model, classifier, test_loader):
+def check_cls_mug(opt, model, classifier, test_loader, run):
     """Evaluate the model's classification accuracy on the MUG dataset.
 
     :param opt: Options/parameters for evaluation.
