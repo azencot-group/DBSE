@@ -553,9 +553,8 @@ def load_dataset(opt):
 
     # set configurations to enable data loading
     opt.data_folder = opt.dataset_path
-    opt.train_annotation = 'your train path'
-    opt.valid_annotation = 'your valid path'
-    opt.test_annotation = 'your test path'
+    if opt.train_annotation is None or opt.train_annotation is None or opt.valid_annotation is None or opt.test_annotation is None:
+        raise ValueError("Paths path must be provided by the user.")
 
     run_on_main(
         prepare_timit,
@@ -684,10 +683,6 @@ def main(opt):
         if epoch and scheduler is not None:
             scheduler.step()
 
-        if epoch == opt.c_loss:
-            print('start contrastive loss computation')
-            opt.weight_c_aug, opt.weight_m_aug = opt.c_floss, opt.c_floss
-
         dbse_model.train()
         epoch_loss.reset()
 
@@ -705,6 +700,7 @@ def main(opt):
 
         if epoch % opt.evl_interval == 0 or epoch == opt.nEpoch - 1:
             dbse_model.eval()
+            voice_verification_dbse_mean(dbse_model, spectrogram, test_loader, run)
             net2save = dbse_model.module if torch.cuda.device_count() > 1 else dbse_model
             torch.save({
                 'model': net2save.state_dict(),

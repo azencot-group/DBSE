@@ -127,6 +127,8 @@ def load_dataset(opt):
     """
     if opt.dataset == 'Sprite':
         path = opt.dataset_path
+        if path is None:
+            raise ValueError("A 'dataset_path' must be provided by the user.")
         from sprites_dataloader import Sprite
 
         with open(path + 'sprites_X_train.npy', 'rb') as f:

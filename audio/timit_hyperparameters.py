@@ -1,3 +1,6 @@
+import argparse
+import os
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--lr', default=1.e-3, type=float, help='learning rate')
 parser.add_argument('--batch_size', default=32, type=int, help='batch size')
@@ -7,7 +10,10 @@ parser.add_argument('--evl_interval', default=10, type=int, help='evaluate every
 parser.add_argument('--log_dir', default='./logs', type=str, help='base directory to save logs')
 
 parser.add_argument('--dataset', default='TIMIT', type=str, help='dataset to train')
-parser.add_argument("--dataset_path", default='Your data set path')
+parser.add_argument("--dataset_path", default=None)
+parser.add_argument("--train_annotation", default=None)
+parser.add_argument("--valid_annotation", default=None)
+parser.add_argument("--test_annotation", default=None)
 parser.add_argument('--decoder', default='ConvT', type=str, help='Upsampling+Conv or Transpose Conv: Conv or ConvT')
 
 parser.add_argument('--f_rnn_layers', default=1, type=int, help='number of layers (content lstm)')

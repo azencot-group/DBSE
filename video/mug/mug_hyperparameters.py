@@ -2,7 +2,7 @@ import argparse
 import os
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--lr', default=0.002, type=float, help='learning rate')
+parser.add_argument('--lr', default=0.0015, type=float, help='learning rate')
 parser.add_argument('--batch_size', default=64, type=int, help='batch size')
 parser.add_argument('--nEpoch', default=2000, type=int, help='number of epochs to train for')
 parser.add_argument('--seed', default=1, type=int, help='manual seed')
@@ -24,9 +24,9 @@ parser.add_argument('--g_dim', default=128, type=int,
 
 parser.add_argument('--loss_recon', default='L2', type=str, help='reconstruction loss: L1, L2')
 parser.add_argument('--note', default='LogNCELoss', type=str, help='appx note')
-parser.add_argument('--weight_f', default=1, type=float, help='weighting on KL to prior, content vector')
+parser.add_argument('--weight_f', default=15, type=float, help='weighting on KL to prior, content vector')
 parser.add_argument('--weight_z', default=1, type=float, help='weighting on KL to prior, motion vector')
-parser.add_argument('--weight_rec_seq', default=90, type=float, help='weighting on reconstruction')
+parser.add_argument('--weight_rec_seq', default=87, type=float, help='weighting on reconstruction')
 parser.add_argument('--weight_rec_frame', default=30, type=float, help='weighting on reconstruction')
 parser.add_argument('--gpu', default='0', type=str, help='index of GPU to use')
 parser.add_argument('--sche', default='const', type=str, help='scheduler')
