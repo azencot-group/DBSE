@@ -14,10 +14,20 @@ Download and set up the repository:
 git clone https://github.com/azencot-group/DBSE.git
 ```
 
+### Conda Environment Setup
+To create the Conda environment from the `environment.yml` file, run:
+```bash
+conda env create -f environment.yml
+```
+
+### Pip Environment Setup
+If you're using Pip, create a `requirements.txt` file manually from the dependencies, then install them:
+```bash
+pip install -r requirements.txt
+```
+
 ## 📊 Data
-[Sprites](https://paperswithcode.com/dataset/sprites)<br>
-[Time Series](https://drive.google.com/drive/folders/1bzECwhWXtCrgwOHBzcIlCMVYLr6OGi56?usp=sharing)<br>
-[Timit](https://catalog.ldc.upenn.edu/LDC93S1)<br><br>
+[Downloag Data](https://drive.google.com/drive/folders/1bzECwhWXtCrgwOHBzcIlCMVYLr6OGi56?usp=sharing)<br><br>
 <b>Note:</b> The [Mug](https://www.researchgate.net/publication/224187946_The_MUG_facial_expression_database) dataset is private, so we are unable to upload it here.
 
 ## Video
