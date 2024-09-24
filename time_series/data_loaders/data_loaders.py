@@ -332,7 +332,7 @@ def har_data_loader(normalize="none"):
 
 
 def etth_data_loader(window_size=24, frame_ind=0, normalize="none"):
-    all_files = glob.glob("/your_etth1_path/*.csv")
+    all_files = glob.glob("/cs/cs_groups/azencot_group/datasets/Ett_ICLR/*.csv")
     column_list = ["year", "month", "day", "hour", "HUFL", "HULL",	"MUFL",	"MULL",	"LUFL",	"LULL",	"OT"]
     feature_list = ["HUFL", "HULL",	"MUFL",	"MULL",	"LUFL",	"LULL"]
     sample_len = 24 * 28 * 1  # 2 months worth of data
@@ -428,7 +428,7 @@ def airq_data_loader(window_size=24, frame_ind=0, normalize="none"):
         Args:
             normalize: The type of data normalizatino to perform ["none", "mean_zero", "min_max"]
         """
-    all_files = glob.glob("/your_air_quality_path/*.csv")
+    all_files = glob.glob("/cs/cs_groups/azencot_group/datasets/air_quality/*.csv")
     column_list = ["year", "month", "day", "hour", "PM2.5", "PM10", "SO2", "NO2", "CO", "O3", "TEMP", "PRES", "DEWP",
                    "RAIN", "WSPM", "station"]
     feature_list = ["PM2.5", "PM10", "SO2", "NO2", "CO", "O3", "TEMP", "PRES", "DEWP", "WSPM"]
@@ -558,12 +558,12 @@ def physionet_data_loader(window_size=4, frame_ind=0, normalize='none', dataset=
                    }
     feature_list = list(feature_map.keys())
     local_list = ['MechVent', 'Weight']
-    data_dir = '/your_physionet_data_directory_path'
+    data_dir = '/cs/cs_groups/azencot_group/datasets/physionet'
     static_vars = ['RecordID', 'Age', 'Gender', 'Height', 'ICUType', 'Weight']
 
-    if os.path.exists(('/your_physionet_path/processed_df.csv')):
-        df_full = pd.read_csv('/your_physionet_path/processed_df.csv')
-        df_static = pd.read_csv('/your_physionet_path/processed_static_df.csv')
+    if os.path.exists(('/cs/cs_groups/azencot_group/datasets/physionet/processed_df.csv')):
+        df_full = pd.read_csv('/cs/cs_groups/azencot_group/datasets/physionet/processed_df.csv')
+        df_static = pd.read_csv('/cs/cs_groups/azencot_group/datasets/physionet/processed_static_df.csv')
     else:
         txt_all = list()
         for f in os.listdir(os.path.join(data_dir, dataset)):
@@ -706,8 +706,8 @@ def physionet_data_loader(window_size=4, frame_ind=0, normalize='none', dataset=
             signal_df_binned[col_list] = signal_df.groupby(bins).agg(
                 dict(zip(col_list, ["mean"] * len(col_list)))).to_numpy()  # {"Temperature": "mean"})
             df_full = pd.concat([signal_df_binned, df_full])
-        df_full.to_csv('/your_physionet_path/processed_df.csv')
-        df_static.to_csv('/your_physionet_path/processed_static_df.csv')
+        df_full.to_csv('/cs/cs_groups/azencot_group/datasets/physionet/processed_df.csv')
+        df_static.to_csv('/cs/cs_groups/azencot_group/datasets/physionet/processed_static_df.csv')
 
     selected_features = ['DiasABP', 'GCS', 'HCT', 'MAP', 'NIDiasABP', 'NIMAP', 'NISysABP', 'RespRate', 'SysABP', 'Temp']
 

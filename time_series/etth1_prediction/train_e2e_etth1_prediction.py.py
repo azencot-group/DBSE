@@ -11,8 +11,8 @@ currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
 sys.path.append(parentdir)
 
-from ..data_loaders.data_loaders import etth_data_loader
-from ..model.dbse import Encoder, Decoder, DBSE
+from time_series.data_loaders.data_loaders import etth_data_loader
+from time_series.model.dbse import Encoder, Decoder, DBSE
 
 print_losses = lambda type, loss, nll, nll_stat, kld_f, kld_z: \
     "{} loss = {:.3f} \t SEQ_LOSS = {:.3f} \t FRAME_LOSS = {:.3f} \t KL_f = {:.3f} \t KL_z = {:.3f}". \
