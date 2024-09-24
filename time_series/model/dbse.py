@@ -130,7 +130,6 @@ class DBSE(nn.Module):
         self.weight_rec_stat = args.weight_rec_stat
         self.weight_f = args.weight_f
         self.weight_z = args.weight_z
-        self.weight_mi = args.weight_mi
 
         self.g_dim = args.g_dim
         self.hidden_dim = args.rnn_size
