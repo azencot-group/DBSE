@@ -77,6 +77,9 @@ cd audio/
 python train_e2e_timit.py
 ```
 
+<b>Note:</b> The files already contain the hyperparameters we used when reporting the results in the paper.
+
+
 ## Bibtex:
 Please cite our paper, if you happen to use this codebase:
 
