@@ -322,6 +322,9 @@ if __name__=="__main__":
     parser.add_argument('--note', default='sample', type=str, help='appx note')
     parser.add_argument('--seed', default=1234, type=int, help='random seed')
 
+    parser.add_argument('--data_dir', type=str, default=None, help='path to the directory of the data')
+    parser.add_argument('--physionet_dataset_path', type=str, default=None, help='path to the physionet data .csv')
+    parser.add_argument('--physionet_static_dataset_path', type=str, default=None, help='path to the physionet static data .csv')
 
     args = parser.parse_args()
 
@@ -330,7 +333,7 @@ if __name__=="__main__":
     n_epochs = 400
     with open('configs.json') as config_file:
         configs = json.load(config_file)[args.data]
-    trainset, validset, testset, _ = physionet_data_loader(window_size=configs["window_size"], frame_ind=args.frame_ind, normalize="mean_zero")
+    trainset, validset, testset, _ = physionet_data_loader(args.data_dir, args.physionet_dataset_path, args.physionet_static_dataset_path, window_size=configs["window_size"], frame_ind=args.frame_ind, normalize="mean_zero")
 
 
     rep_model = train_rep_model(args, n_epochs, trainset, validset, testset)

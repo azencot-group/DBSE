@@ -316,6 +316,7 @@ if __name__=="__main__":
 
     parser.add_argument('--note', default='sample', type=str, help='appx note')
     parser.add_argument('--seed', default=1234, type=int, help='random seed')
+    parser.add_argument('--dataset_path', default=None, type=str, help='path to the data .csv')
 
     args = parser.parse_args()
     define_seed(args)
@@ -324,7 +325,7 @@ if __name__=="__main__":
         configs = json.load(config_file)[args.data]
 
     n_epochs = 200
-    trainset, validset, testset, _ = airq_data_loader(frame_ind=args.frame_ind, normalize="mean_zero")
+    trainset, validset, testset, _ = airq_data_loader(args.dataset_path, frame_ind=args.frame_ind, normalize="mean_zero")
 
     rep_model = train_rep_model(args, n_epochs, trainset, validset, testset)
     test_accuracies, test_losses = train_and_test_classifier(args, trainset, validset, testset, rep_model)

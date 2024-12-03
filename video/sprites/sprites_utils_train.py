@@ -1,7 +1,12 @@
+import os
+import sys
+
 import torch
 import torch.nn.functional as F
 import numpy as np
-from utils import reorder, KL_divergence, inception_score, entropy_Hy, entropy_Hyx
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+
+from video.utils.video_utils import reorder, KL_divergence, inception_score, entropy_Hy, entropy_Hyx
 
 def check_cls(opt, dbse, classifier, test_loader, run):
     """

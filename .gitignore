@@ -1,7 +1,2 @@
-/.idea/DBSE.iml
-/.idea/deployment.xml
-/.idea/inspectionProfiles/profiles_settings.xml
-/.idea/inspectionProfiles/Project_Default.xml
-/.idea/misc.xml
-/.idea/modules.xml
-/.idea/vcs.xml
+.idea/
+/video/mug/mug_data_class.py
