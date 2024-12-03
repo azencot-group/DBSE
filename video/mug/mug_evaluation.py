@@ -3,8 +3,8 @@ import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 import torch.optim as optim
 import torch.utils.data
-from dbse_model import DBSE
-from utils import define_seed
+from video.model.dbse_model import DBSE
+from video.utils.video_utils import define_seed
 from mug_utils_train import *
 from mug_hyperparameters import *
 from mug_utils import *

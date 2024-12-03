@@ -23,8 +23,6 @@ parser.add_argument('--z_dim', default=128, type=int, help='dimensionality of z_
 parser.add_argument('--g_dim', default=128, type=int, help='dimensionality of encoder output vector and decoder input vector')
 
 # audio args
-# parser.add_argument('--w_len', type=int, default=160, help='window length')
-# parser.add_argument('--h_len', type=int, default=160, help='hop length')
 parser.add_argument('--w_len', type=int, default=320, help='window length')
 parser.add_argument('--h_len', type=int, default=165, help='hop length')
 parser.add_argument('--power', type=int, default=1, help='power of the spectrogram')

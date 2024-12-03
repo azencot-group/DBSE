@@ -1,6 +1,8 @@
 import random
-
-import utils
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+import video.utils.video_utils as utils
 import progressbar
 import numpy as np
 
@@ -11,11 +13,11 @@ import torch.nn.functional as F
 import torch.utils.data
 from torch.utils.data import DataLoader
 from sprites_hyperparameters import *
-from dbse_model import DBSE, classifier_Sprite_all
 
-from utils import reorder
+from video.utils.video_utils import reorder
 from sprites_utils_train import check_cls
-from video.sprites.dbse_utils import DbseLoss
+from video.model.dbse_utils import DbseLoss
+from video.model.dbse_model import DBSE, classifier_Sprite_all
 
 mse_loss = nn.MSELoss().cuda()
 # Constants to be defined by the user

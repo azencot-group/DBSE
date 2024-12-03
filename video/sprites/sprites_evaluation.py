@@ -1,11 +1,15 @@
 import random
-import utils
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+
+import  video.utils.video_utils as utils
 
 import torch.nn as nn
 import torch.utils.data
 from torch.utils.data import DataLoader
 from sprites_utils_train import *
-from dbse_model import DBSE, classifier_Sprite_all
+from video.model.dbse_model import DBSE, classifier_Sprite_all
 from sprites_hyperparameters import *
 
 mse_loss = nn.MSELoss().cuda()

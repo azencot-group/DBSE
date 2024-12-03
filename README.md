@@ -33,12 +33,15 @@ pip install -r requirements.txt
 ## Video
 
 For Training and Evaluation of mug dataset (Table 1 in our paper):
+- Implement define_classifier and load_dataset in mug_utils.py.
 ```bash
 cd video/mug/
 python run_mug.py
 ```
 
 For Training and Evaluation of sprites dataset (Table 1 in our paper):
+- Ensure the --dataset_path argument is set in sprites_hyperparameters.py.
+
 ```bash
 cd video/sprites/
 python run_sprites.py
@@ -47,34 +50,39 @@ python run_sprites.py
 ## Time Series
 
 For Training and Evaluation of etth1 predictor (Table 3 in our paper):
+- Add the --dataset_path argument in train_and_eval_etth1_prediction.py.
 ```bash
 cd time_series/etth1_prediction/
 python train_e2e_etth1_prediction.py
 ```
 
 For Training and Evaluation of physionet predictor (Table 3 in our paper):
+- Add --data_dir, --physionet_dataset_path, and --physionet_static_dataset_path in train_and_eval_physionet_prediction.py.
 ```bash
 cd time_series/physionet_prediction/
-python train_e2e_physionet_prediction.py
+python train_and_eval_physionet_prediction.py
 ```
 
 For Training and Evaluation of air quality classifier (Table 4 in our paper):
+- Add the --dataset_path argument in train_and_eval_air_quality_classifier.py.
 ```bash
 cd time_series/air_quality_classifier/
-python train_e2e_air_quality_classifier.py
+python train_and_eval_air_quality_classifier.py
 ```
 
 For Training and Evaluation of physionet classifier (Table 4 in our paper):
+- Add --data_dir, --physionet_dataset_path, and --physionet_static_dataset_path in train_and_eval_physionet_classifier.py.
 ```bash
 cd time_series/physionet_classifier/
-python train_e2e_physionet_classifier.py
+python train_and_eval_physionet_classifier.py
 ```
 ## Audio
 
 For Training and Evaluation of timit classifier (Table 7 in our paper):
+- Ensure the --dataset_path argument is set in timit_hyperparameters.py.
 ```bash
 cd audio/
-python train_e2e_timit.py
+python train_and_eval_timit.py
 ```
 
 <b>Note:</b> The files already contain the hyperparameters we used when reporting the results in the paper.

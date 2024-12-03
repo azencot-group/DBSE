@@ -343,7 +343,7 @@ if __name__ == "__main__":
     parser.add_argument('--weight_rec_stat', type=float, default=11., help='weighting on general reconstruction')
     parser.add_argument('--weight_f', type=float, default=0.01, help='weighting on KL to prior, content vector')
     parser.add_argument('--weight_z', type=float, default=0.001, help='weighting on KL to prior, motion vector')
-
+    parser.add_argument("--dataset_path", type=str, default=None, help='dataset path .csv')
     parser.add_argument('--note', default='sample', type=str, help='appx note')
     parser.add_argument('--seed', default=1234, type=int, help='random seed')
 
@@ -356,7 +356,7 @@ if __name__ == "__main__":
         configs = json.load(config_file)[args.data]
 
     n_epochs = 300
-    trainset, validset, testset, _ = etth_data_loader(window_size=configs["window_size"], frame_ind=args.frame_ind, normalize="mean_zero")
+    trainset, validset, testset, _ = etth_data_loader(args.dataset_path, window_size=configs["window_size"], frame_ind=args.frame_ind, normalize="mean_zero")
 
     cv_loss, cv_acc, cv_auroc = [], [], []
 

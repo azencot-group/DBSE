@@ -5,11 +5,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
 import progressbar
 import torch.optim as optim
 import torch.utils.data
-from dbse_model import DBSE
-from video.mug.utils import *
+from video.model.dbse_model import DBSE
+from video.utils.video_utils import *
 from video.mug.mug_utils_train import *
 from mug_hyperparameters import *
-from dbse_utils import DbseLoss
+from video.model.dbse_utils import DbseLoss
 from mug_utils import *
 
 mse_loss = nn.MSELoss().cuda()

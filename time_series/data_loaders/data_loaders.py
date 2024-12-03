@@ -331,8 +331,10 @@ def har_data_loader(normalize="none"):
     return trainset, validset, testset, normalization_specs
 
 
-def etth_data_loader(window_size=24, frame_ind=0, normalize="none"):
-    all_files = glob.glob("/cs/cs_groups/azencot_group/datasets/Ett_ICLR/*.csv")
+def etth_data_loader(dataset_path, window_size=24, frame_ind=0, normalize="none"):
+    if dataset_path is None:
+        raise ValueError("Dataset Path path must be provided by the user.")
+    all_files = glob.glob(dataset_path)
     column_list = ["year", "month", "day", "hour", "HUFL", "HULL",	"MUFL",	"MULL",	"LUFL",	"LULL",	"OT"]
     feature_list = ["HUFL", "HULL",	"MUFL",	"MULL",	"LUFL",	"LULL"]
     sample_len = 24 * 28 * 1  # 2 months worth of data
@@ -418,7 +420,7 @@ def etth_data_loader(window_size=24, frame_ind=0, normalize="none"):
 
     return trainset, validset, testset, normalization_specs
 
-def airq_data_loader(window_size=24, frame_ind=0, normalize="none"):
+def airq_data_loader(dataset_path, window_size=24, frame_ind=0, normalize="none"):
     """Function to load the Air Quality dataset into TF dataset objects
 
         The data is loaded, normalized, padded, and a mask channel is generated to indicate missing observations
@@ -428,7 +430,9 @@ def airq_data_loader(window_size=24, frame_ind=0, normalize="none"):
         Args:
             normalize: The type of data normalizatino to perform ["none", "mean_zero", "min_max"]
         """
-    all_files = glob.glob("/cs/cs_groups/azencot_group/datasets/air_quality/*.csv")
+    if dataset_path is None:
+        raise ValueError("Paths path must be provided by the user.")
+    all_files = glob.glob(dataset_path)
     column_list = ["year", "month", "day", "hour", "PM2.5", "PM10", "SO2", "NO2", "CO", "O3", "TEMP", "PRES", "DEWP",
                    "RAIN", "WSPM", "station"]
     feature_list = ["PM2.5", "PM10", "SO2", "NO2", "CO", "O3", "TEMP", "PRES", "DEWP", "WSPM"]
@@ -519,7 +523,7 @@ def airq_data_loader(window_size=24, frame_ind=0, normalize="none"):
     return trainset, validset, testset, normalization_specs
 
 
-def physionet_data_loader(window_size=4, frame_ind=0, normalize='none', dataset='set-a'):
+def physionet_data_loader(data_dir, physionet_dataset_path, physionet_static_dataset_path, window_size=4, frame_ind=0, normalize='none', dataset='set-a'):
     feature_map = {'Albumin': 'Serum Albumin (g/dL)',
                    'ALP': 'Alkaline phosphatase (IU/L)',
                    'ALT': 'Alanine transaminase (IU/L)',
@@ -558,12 +562,11 @@ def physionet_data_loader(window_size=4, frame_ind=0, normalize='none', dataset=
                    }
     feature_list = list(feature_map.keys())
     local_list = ['MechVent', 'Weight']
-    data_dir = '/cs/cs_groups/azencot_group/datasets/physionet'
     static_vars = ['RecordID', 'Age', 'Gender', 'Height', 'ICUType', 'Weight']
 
-    if os.path.exists(('/cs/cs_groups/azencot_group/datasets/physionet/processed_df.csv')):
-        df_full = pd.read_csv('/cs/cs_groups/azencot_group/datasets/physionet/processed_df.csv')
-        df_static = pd.read_csv('/cs/cs_groups/azencot_group/datasets/physionet/processed_static_df.csv')
+    if os.path.exists(physionet_dataset_path):
+        df_full = pd.read_csv(physionet_dataset_path)
+        df_static = pd.read_csv(physionet_static_dataset_path)
     else:
         txt_all = list()
         for f in os.listdir(os.path.join(data_dir, dataset)):
@@ -706,8 +709,8 @@ def physionet_data_loader(window_size=4, frame_ind=0, normalize='none', dataset=
             signal_df_binned[col_list] = signal_df.groupby(bins).agg(
                 dict(zip(col_list, ["mean"] * len(col_list)))).to_numpy()  # {"Temperature": "mean"})
             df_full = pd.concat([signal_df_binned, df_full])
-        df_full.to_csv('/cs/cs_groups/azencot_group/datasets/physionet/processed_df.csv')
-        df_static.to_csv('/cs/cs_groups/azencot_group/datasets/physionet/processed_static_df.csv')
+        df_full.to_csv(physionet_dataset_path)
+        df_static.to_csv(physionet_static_dataset_path)
 
     selected_features = ['DiasABP', 'GCS', 'HCT', 'MAP', 'NIDiasABP', 'NIMAP', 'NISysABP', 'RespRate', 'SysABP', 'Temp']
 
@@ -817,6 +820,3 @@ def replace_value(df, c, value=np.nan, below=None, above=None):
     else:
         df.loc[idx, 'value'] = value
     return df
-
-
-trainset, validset, testset, normalization_specs = etth_data_loader(normalize="mean_zero")
