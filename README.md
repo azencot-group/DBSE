@@ -27,7 +27,7 @@ pip install -r requirements.txt
 ```
 
 ## 📊 Data
-[Downloag Data](https://drive.google.com/drive/folders/1bzECwhWXtCrgwOHBzcIlCMVYLr6OGi56?usp=sharing)<br><br>
+[Download Data](https://drive.google.com/drive/folders/1bzECwhWXtCrgwOHBzcIlCMVYLr6OGi56?usp=sharing)<br><br>
 <b>Note:</b> The [Mug](https://www.researchgate.net/publication/224187946_The_MUG_facial_expression_database) dataset is private, so we are unable to upload it here.
 
 ## Video
