@@ -1,5 +1,5 @@
 # DBSE
-Sequential **D**isentanglement **b**y Extracting Static Information From A **S**ingle Sequence **E**lement
+Sequential **D**isentanglement **b**y Extracting Static Information From A **S**ingle Sequence **E**lement (ICML 2024)
 
 ### [Paper](https://arxiv.org/pdf/2406.18131)
 
