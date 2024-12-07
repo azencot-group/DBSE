@@ -7,6 +7,8 @@ import torch
 import torch.nn as nn
 import numpy as np
 
+from time_series.time_series_utils import compute_loss, define_seed
+
 currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
 sys.path.append(parentdir)
@@ -67,46 +69,6 @@ class Predictor(nn.Module):
         probs = self.relu(self.prob(logits))  # [10, 28, 1]
         return probs.squeeze(-1)  # [5, 10]
 
-
-def compute_loss(x, model, x_lens, args, m_mask=None, return_parts=False):
-    assert len(x.shape) == 3, "Input should have shape: [batch_size, time_length, data_dim]"
-    x = x.repeat(model.M, 1, 1)  # shape=(M*BS, TL, D)
-
-    if m_mask is not None:
-        m_mask = m_mask.repeat(model.M, 1, 1)
-
-    f_post_mean, f_post_logvar, f_post, z_post_mean, z_post_logvar, z_post, z_prior_mean, z_prior_logvar, z_prior, recon_x, px_hat, recon_x_frame, px_hat_stat = model(
-        x, x_lens, m_mask)
-
-    # Compute the negative log likelihood
-    nll = -px_hat.log_prob(x)
-    nll_stat = -px_hat_stat.log_prob(x[:, 0, :][:, None])
-
-    # Apply mask if provided
-    if m_mask is not None:
-        nll = torch.where(m_mask == 1, torch.zeros_like(nll), nll)
-
-    # KL divergence of f and z_t
-    f_post_mean = f_post_mean.view((-1, f_post_mean.shape[-1]))
-    f_post_logvar = f_post_logvar.view((-1, f_post_logvar.shape[-1]))
-    kld_f = -0.5 * torch.sum(1 + f_post_logvar - torch.pow(f_post_mean, 2) - torch.exp(f_post_logvar))
-
-    z_post_var = torch.exp(z_post_logvar)
-    z_prior_var = torch.exp(z_prior_logvar)
-    kld_z = 0.5 * torch.sum(z_prior_logvar - z_post_logvar +
-                            ((z_post_var + torch.pow(z_post_mean - z_prior_mean, 2)) / z_prior_var) - 1)
-
-    batch_size = x.shape[0]
-    kld_f, kld_z = kld_f / batch_size, kld_z / batch_size
-
-    nll = torch.mean(nll, dim=[1, 2])
-    nll_stat = torch.mean(nll_stat, dim=[1, 2])
-
-    elbo = - nll * args.weight_rec - kld_f * args.weight_f - kld_z * args.weight_z - nll_stat * args.weight_rec_stat
-    elbo = elbo.mean()
-    if return_parts:
-        return -elbo, nll.mean(), nll_stat.mean(), kld_z, kld_z
-    return -elbo
 
 
 def run_epoch(args, model, data_loader, optimizer, train=True, test=False):
@@ -314,14 +276,7 @@ def train_predictor_and_test_avg_oil_temp(args, trainset, validset, testset, rep
     return test_loss
 
 
-def define_seed(seed):
-    # Control the sequence sample
-    random.seed(args.seed)
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
-    torch.cuda.manual_seed(args.seed)
-    torch.cuda.manual_seed_all(args.seed)
-    torch.backends.cudnn.deterministic = True
+
 
 
 if __name__ == "__main__":

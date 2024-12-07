@@ -281,9 +281,3 @@ class DBSE(nn.Module):
                 z_logvars = torch.cat((z_logvars, z_logvar_t.unsqueeze(1)), dim=1)
             z_t = z_post[:, i, :]
         return z_means, z_logvars, z_out
-
-
-    def get_trainable_vars(self):
-        self.compute_loss(x=tf.random.normal(shape=(1, self.sample_len, self.feature_dim), dtype=tf.float32),
-                          m_mask=tf.zeros(shape=(1, self.sample_len, self.feature_dim), dtype=tf.float32))
-        return self.trainable_variables

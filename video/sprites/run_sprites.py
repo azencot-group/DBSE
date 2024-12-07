@@ -21,8 +21,6 @@ from video.model.dbse_model import DBSE, classifier_Sprite_all
 
 mse_loss = nn.MSELoss().cuda()
 # Constants to be defined by the user
-SPRITE_JUDGE_PATH = None
-
 
 # --------- training funtions ------------------------------------
 def train(x, model, optimizer, opt, mode="train"):
@@ -122,7 +120,9 @@ def main(opt):
     opt.rnn_size = 256
     opt.g_dim = 128
     classifier = classifier_Sprite_all(opt)
-    opt.resume = SPRITE_JUDGE_PATH
+    if opt.dataset_path is None:
+        raise ValueError("Paths path must be provided by the user.")
+    opt.resume = os.path.join(opt.dataset_path, 'sprite_judge.tar')
     loaded_dict = torch.load(opt.resume)
     classifier.load_state_dict(loaded_dict['state_dict'])
     classifier = classifier.cuda().eval()
@@ -152,6 +152,7 @@ def main(opt):
     # --------- training loop ------------------------------------
     cur_step = 0
     for epoch in range(opt.nEpoch):
+        print(f"epoch {epoch}")
         if epoch and scheduler is not None:
             scheduler.step()
 

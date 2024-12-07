@@ -8,27 +8,33 @@ This project presents a novel approach to unsupervised sequential disentanglemen
 
 <img width="1105" alt="image" src="https://github.com/user-attachments/assets/e4133951-1767-4de2-bea2-7ddeb78720d7">
 
-## Setup
-Download and set up the repository:
-```bash
-git clone https://github.com/azencot-group/DBSE.git
-```
+## Setup  
 
-### Conda Environment Setup
-To create the Conda environment from the `environment.yml` file, run:
-```bash
-conda env create -f environment.yml
-```
+### Conda Environment Setup  
+To set up the environment, run the following commands:  
 
-### Pip Environment Setup
-If you're using Pip, create a `requirements.txt` file manually from the dependencies, then install them:
 ```bash
-pip install -r requirements.txt
+# Create a new Conda environment
+conda create -n dbse python=3.9 -y  
+
+# Activate the environment
+conda activate dbse  
+
+# Install PyTorch with Conda
+conda install pytorch=2.0.0 torchaudio=2.0.0 cudatoolkit=11.7 -c pytorch -y  
+
+# Install the rest with pip
+pip install -r requirements.txt  
 ```
 
 ## 📊 Data
 [Download Data](https://drive.google.com/drive/folders/1bzECwhWXtCrgwOHBzcIlCMVYLr6OGi56?usp=sharing)<br><br>
 <b>Note:</b> The [Mug](https://www.researchgate.net/publication/224187946_The_MUG_facial_expression_database) dataset is private, so we are unable to upload it here.
+
+The dataset_path parameter used throughout this repository should point to the path where you extract the data downloaded from the shared Google Drive folder linked above. For example, after downloading and extracting the data:
+```bash
+dataset_path="/path/to/extracted/data"
+```
 
 ## Video
 
@@ -71,7 +77,7 @@ python train_and_eval_air_quality_classifier.py
 ```
 
 For Training and Evaluation of physionet classifier (Table 4 in our paper):
-- Add --data_dir, --physionet_dataset_path, and --physionet_static_dataset_path in train_and_eval_physionet_classifier.py.
+- Add --data_dir in train_and_eval_physionet_classifier.py.
 ```bash
 cd time_series/physionet_classifier/
 python train_and_eval_physionet_classifier.py

@@ -523,7 +523,7 @@ def airq_data_loader(dataset_path, window_size=24, frame_ind=0, normalize="none"
     return trainset, validset, testset, normalization_specs
 
 
-def physionet_data_loader(data_dir, physionet_dataset_path, physionet_static_dataset_path, window_size=4, frame_ind=0, normalize='none', dataset='set-a'):
+def physionet_data_loader(data_dir, window_size=4, frame_ind=0, normalize='none', dataset='set-a'):
     feature_map = {'Albumin': 'Serum Albumin (g/dL)',
                    'ALP': 'Alkaline phosphatase (IU/L)',
                    'ALT': 'Alanine transaminase (IU/L)',
@@ -563,8 +563,11 @@ def physionet_data_loader(data_dir, physionet_dataset_path, physionet_static_dat
     feature_list = list(feature_map.keys())
     local_list = ['MechVent', 'Weight']
     static_vars = ['RecordID', 'Age', 'Gender', 'Height', 'ICUType', 'Weight']
-
-    if os.path.exists(physionet_dataset_path):
+    if data_dir is None:
+        raise ValueError("Dataset Path path must be provided by the user.")
+    physionet_dataset_path = os.path.join(data_dir, 'processed_df.csv')
+    physionet_static_dataset_path = os.path.join(data_dir, 'processed_static_df.csv')
+    if os.path.exists(data_dir):
         df_full = pd.read_csv(physionet_dataset_path)
         df_static = pd.read_csv(physionet_static_dataset_path)
     else:
