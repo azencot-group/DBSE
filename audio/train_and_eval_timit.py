@@ -551,11 +551,13 @@ def load_dataset(opt):
     from load_timit import prepare_timit
     from speechbrain.utils.distributed import run_on_main
 
+    if opt.dataset_path is None:
+        raise ValueError("Paths path must be provided by the user.")
     # set configurations to enable data loading
     opt.data_folder = opt.dataset_path
-    if opt.train_annotation is None or opt.train_annotation is None or opt.valid_annotation is None or opt.test_annotation is None:
-        raise ValueError("Paths path must be provided by the user.")
-
+    opt.train_annotation = os.path.join(opt.dataset_path, 'train.json')
+    opt.valid_annotation = os.path.join(opt.dataset_path, 'valid.json')
+    opt.test_annotation = os.path.join(opt.dataset_path, 'test.json')
     run_on_main(
         prepare_timit,
         kwargs={
